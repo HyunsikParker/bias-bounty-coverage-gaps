@@ -1,0 +1,5 @@
+These five files are copied unchanged from https://github.com/teddywasserman/overture-coverage-equity
+(data/features/<region>-features.parquet) at commit 1c9033ae2373c9c0adbf4f2315bbf6d5485d6fe0 (2 October 2026).
+They are redistributed under the MIT licence in LICENSE (copyright 2026 Kapital Experiment). Their SHA-256 hashes are in
+../../SHA256SUMS. The repository's README states that the files are built only from the challenge's Overture extracts,
+ACS and strata files.

@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.13" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Coverage gaps without the reference layers</title>
+  <style>
+
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+</style>
+  <style type="text/css">@page { size: A4; margin: 16mm 15mm; }
+body { font-family: "Charter", "Georgia", serif; font-size: 10.2pt; line-height: 1.42; color: #111; max-width: 180mm; margin: 0 auto; }
+h1 { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 17pt; line-height: 1.2; margin: 0 0 6pt; }
+h2 { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 12.5pt; margin: 14pt 0 4pt; border-bottom: 0.6pt solid #111; padding-bottom: 2pt; break-after: avoid; page-break-after: avoid; }
+h3 { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 10.8pt; margin: 10pt 0 3pt; break-after: avoid; page-break-after: avoid; }
+p, li { margin: 3pt 0; orphans: 3; widows: 3; }
+code { font-family: "Menlo", monospace; font-size: 8.6pt; }
+table { border-collapse: collapse; width: 100%; margin: 5pt 0 7pt; font-size: 8.8pt; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+thead { display: table-header-group; }
+th, td { border-top: 0.4pt solid #999; border-bottom: 0.4pt solid #999; padding: 2.5pt 4pt; vertical-align: top; text-align: left; }
+th { border-top: 0.9pt solid #111; border-bottom: 0.9pt solid #111; font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1 id="coverage-gaps-without-the-reference-layers-feature-proxies-calibrated-on-public-leaderboard-moments">Coverage
+gaps without the reference layers: feature proxies calibrated on
+public-leaderboard moments</h1>
+<p><strong>Best Documentation entry</strong> · Zindi user
+<strong>skaiea13</strong> · final selected submissions
+<strong>gki9K7jy</strong> (public RMSE 0.075383, 16 October 2026) and
+<strong>6BNL8pZ3</strong> (public RMSE 0.075416, 17 October 2026)</p>
+<p>Data: the challenge package (Overture release 2026-08-19.0 extracts,
+ACS housing units, census tract boundaries, strata tables and the sample
+submission files) and tract features that another participant derived
+from the same package and published under the MIT licence (Section 2).
+No removed reference layer, no copy of one and no outside dataset was
+used.</p>
+<p>Code, outputs and checksums: the full package described in Section 8
+is public at <a href="https://github.com/HyunsikParker/bias-bounty-coverage-gaps" class="uri">https://github.com/HyunsikParker/bias-bounty-coverage-gaps</a>.</p>
+<h2 id="summary">1. Summary</h2>
+<p>The organisers removed the TIGER roads, Microsoft building
+footprints, facility points and County Business Patterns counts from the
+package on 25 September. Since then no file in it carries a label or a
+reference denominator, so a component gap cannot be computed the way the
+methodology describes. Two things remain: tract features built from the
+package that track each component, and the public leaderboard, which
+reports one RMSE per uploaded file.</p>
+<p>Our first estimator turned the features into component gaps against
+estimated denominators and averaged them. Its mean was 0.311, while the
+public target mean is 0.060, and it scored worse than a constant at its
+own mean (0.2787 against 0.2663). The estimator behind the selected
+submissions keeps the features as predictors and takes its scale from
+the leaderboard:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>y</mi><mo accent="true">̂</mo></mover><mi>i</mi></msub><mo>=</mo><mover><mi>y</mi><mo accent="true">‾</mo></mover><mo>+</mo><munder><mo>∑</mo><mi>j</mi></munder><msub><mi>β</mi><mi>j</mi></msub><mspace width="0.167em"></mspace><mo stretchy="false" form="prefix">(</mo><msub><mi>f</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>−</mo><msub><mi>m</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">\hat y_i = \bar y + \sum_j \beta_j \,(f_{ij} - m_j).</annotation></semantics></math></p>
+<p>The public mean and variance of the target come from two constant
+files. The public covariance of each predictor with the target comes
+from one probe file per predictor, by solving the RMSE of that file for
+the covariance. The coefficients are
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>=</mo><msup><mi mathvariant="normal">Σ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mi>c</mi></mrow><annotation encoding="application/x-tex">\beta = \Sigma^{-1} c</annotation></semantics></math>.
+The first four joint models scored within 0.00033 of the RMSE we
+predicted before uploading them; larger models drifted further above
+their predictions (Table 4), so we stopped adding predictors.</p>
+<p>Every step except the leaderboard reads runs from the package with
+the scripts in <code>src/</code>. The reads themselves are listed with
+their submission IDs (Table 3), and with them the scripts rebuild the
+selected file gki9K7jy byte for byte and every value of 6BNL8pZ3
+(Section 8).</p>
+<h2 id="data">2. Data</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File in the package</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reference/&lt;region&gt;/&lt;region&gt;-sample-submission.csv</code></td>
+<td>Scored GEOIDs and row order. GEOID is read as text, so Maricopa
+keeps its leading zero.</td>
+</tr>
+<tr>
+<td><code>reference/&lt;region&gt;/&lt;region&gt;-overture-roads.parquet</code>,
+<code>-overture-buildings.parquet</code>,
+<code>-overture-pois.parquet</code></td>
+<td>Road length by class and route network, building counts by source,
+place counts by category (through the derived features below).</td>
+</tr>
+<tr>
+<td><code>reference/&lt;region&gt;/&lt;region&gt;-census-acs-housing.parquet</code></td>
+<td>Housing units, used only as a denominator floor.</td>
+</tr>
+<tr>
+<td><code>strata/&lt;region&gt;/&lt;region&gt;-strata-tract-table.parquet</code></td>
+<td><code>pct_urban</code>, the urban share of tract population.</td>
+</tr>
+<tr>
+<td><code>strata/&lt;region&gt;/&lt;region&gt;-census-tracts.parquet</code></td>
+<td>Tract polygons and land area (through the derived features).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Derived features from another participant.</strong> Most
+predictors are computed from the per-tract counts in
+<code>data/features/&lt;region&gt;-features.parquet</code> of the
+repository <code>teddywasserman/overture-coverage-equity</code>, commit
+<code>1c9033ae2373c9c0adbf4f2315bbf6d5485d6fe0</code> (2 October 2026),
+MIT licence, copyright 2026 Kapital Experiment. The author linked it in
+the challenge discussion (thread 35079), and its README states that it
+is built only from the challenge’s Overture extracts, ACS and strata
+files. We read 23 of its columns: <code>region</code>,
+<code>ALAND</code>, <code>acs_housing_units</code>, six road lengths
+(<code>road_km_all</code>, <code>road_km_named</code>,
+<code>road_km_signed</code>, <code>road_km_county_route</code>,
+<code>road_km_signed_lowclass</code>,
+<code>road_km_county_lowclass</code>), six building counts
+(<code>bld_n</code> and its OpenStreetMap, Microsoft ML, Esri, Google
+and under-40 m² subsets) and eight place counts (<code>poi_n</code>,
+<code>poi_fire</code>, <code>poi_fire_protection</code>,
+<code>poi_ems</code>, <code>poi_schools</code> and the three “named like
+a fire station, EMS unit or school but filed in another category”
+counts). We checked these columns against our own DuckDB build of the
+same Overture files. Fire, EMS and school place counts agree in all
+9,794 tracts. All-place counts agree in 9,734 tracts and building counts
+in 9,501, with differences of at most three features, which we attribute
+to how the two builds assign features on tract boundaries. Named-highway
+length agrees within 10 m in 8,670 tracts (correlation 0.999995; largest
+difference 2.3 km).</p>
+<p><strong>Our own derived file.</strong>
+<code>analysis/misfiled/classification_deserts.csv</code> lists 368
+tracts (333 of them scored) with no place filed as
+<code>fire_department</code> but at least one place whose name
+identifies a fire department. It comes from
+<code>src/misfiled_stations.py</code> and
+<code>src/misfiled_report.py</code> (Overture places only) and is the
+basis of our Best Bias Discovery entry.</p>
+<p><strong>Deliberately not used.</strong> The strata columns
+<code>usfs_BuildingCount_sum</code>, <code>usfs_HUCount_sum</code> and
+<code>carbonplan_buildings</code> count buildings from sources close to
+the removed footprint reference. Discussion 35302 asks whether they are
+allowed and had no organiser answer when we built the predictors, so we
+left them out.</p>
+<h2 id="predictors">3. Predictors</h2>
+<p>Each predictor stands in for one part of the published definition
+(Table 1). They are proxies: none of them recovers a removed
+denominator, and none needs to, because the calibration in Section 5
+only uses how each one co-varies with the target.</p>
+<p><strong>Road gap.</strong> The definition compares Overture length in
+the motorway, trunk, primary and secondary classes with TIGER S1100 and
+S1200 length. Overture’s <code>routes</code> attribute marks segments
+that carry an Interstate, US or State route, which correspond closely to
+the TIGER S1100 and S1200 classes. We estimate the reference length as
+signed-route length plus county-route length and compute</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>g</mi><mi>i</mi><mrow><mi>r</mi><mi>o</mi><mi>a</mi><mi>d</mi></mrow></msubsup><mo>=</mo><mn>1</mn><mo>−</mo><mrow><mi mathvariant="normal">min</mi><mo>⁡</mo></mrow><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>,</mo><mfrac><msubsup><mi>L</mi><mi>i</mi><mrow><mi>n</mi><mi>a</mi><mi>m</mi><mi>e</mi><mi>d</mi></mrow></msubsup><mrow><msubsup><mi>L</mi><mi>i</mi><mrow><mi>s</mi><mi>i</mi><mi>g</mi><mi>n</mi><mi>e</mi><mi>d</mi></mrow></msubsup><mo>+</mo><msubsup><mi>L</mi><mi>i</mi><mrow><mi>c</mi><mi>o</mi><mi>u</mi><mi>n</mi><mi>t</mi><mi>y</mi></mrow></msubsup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">g^{road}_i = 1 - \min\!\left(1, \frac{L^{named}_i}{L^{signed}_i + L^{county}_i}\right).</annotation></semantics></math></p>
+<p>The component counts as defined
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mi>i</mi></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">d_i = 1</annotation></semantics></math>)
+when that estimated reference exceeds 0.1 km. The predictor
+<code>road_g1</code> is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>g</mi><mi>i</mi><mrow><mi>r</mi><mi>o</mi><mi>a</mi><mi>d</mi></mrow></msubsup><mo>⋅</mo><msub><mi>d</mi><mi>i</mi></msub><mi>/</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>d</mi><mi>i</mi></msub><mo>+</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">g^{road}_i \cdot d_i/(d_i + 2)</annotation></semantics></math>,
+the road term’s share of a three-component mean, and is 0 when the road
+is undefined. <code>road_g1_def</code> is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>d</mi><mi>i</mi></msub><annotation encoding="application/x-tex">d_i</annotation></semantics></math>
+itself. The methodology warns that road gaps are not comparable across
+regions, so <code>road_g1_ok</code> and <code>road_g1_tx</code> give
+Eastern Oklahoma and South-Central Texas their own slopes.</p>
+<p><strong>Building gap.</strong> The reference is Microsoft’s footprint
+count, and Overture imports many Microsoft footprints, so the
+composition of a tract’s Overture buildings says something about how
+complete they are. The building predictors are the OpenStreetMap and
+Esri shares of Overture buildings, the share of footprints under 40 m²,
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>B</mi><mi>i</mi></msub><mi>/</mi><mrow><mi mathvariant="normal">max</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>H</mi><msub><mi>U</mi><mi>i</mi></msub><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(1 + B_i / \max(HU_i, 1))</annotation></semantics></math>,
+buildings per housing unit.</p>
+<p><strong>POI gap, facilities half.</strong> The reference counts fire
+stations, EMS stations and schools. <code>fire0_rural</code> equals the
+rural share, one minus <code>pct_urban</code>, when no place is filed as
+<code>fire_department</code>, and 0 otherwise.
+<code>fire_evidence</code> marks tracts with no
+<code>fire_department</code> place that still hold a
+fire-protection-service place or a fire-department name in another
+category, and <code>fire_classdesert</code> marks the 333 scored
+classification deserts above. <code>school0</code> and
+<code>school_evidence</code> do the same for schools. No EMS predictor
+entered a fit: its name evidence is non-zero in under 3% of tracts, too
+sparse for a probe to measure.</p>
+<p><strong>POI gap, establishments half.</strong> The reference is
+County Business Patterns establishments. <code>cbp_lowplaces</code> is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">clip</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msub><mi>r</mi><mi>i</mi></msub><mi>/</mi><mover><mi>r</mi><mo accent="true">̃</mo></mover><mo>,</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\operatorname{clip}(1 - r_i/\tilde r, 0, 1)</annotation></semantics></math>,
+where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>r</mi><mi>i</mi></msub><annotation encoding="application/x-tex">r_i</annotation></semantics></math>
+is Overture places per housing unit and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>r</mi><mo accent="true">̃</mo></mover><mo>=</mo><mn>0.0861</mn></mrow><annotation encoding="application/x-tex">\tilde r = 0.0861</annotation></semantics></math>
+its median over tracts with more than 50 housing units.</p>
+<p><strong>Region.</strong> Indicators for Eastern Oklahoma, Maricopa
+and Northern California, with South-Central Texas as the base.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Predictor</th>
+<th>Component</th>
+<th>Construction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>road_g1</code></td>
+<td>road</td>
+<td>estimated road gap times its share of a three-way mean</td>
+</tr>
+<tr>
+<td><code>road_g1_def</code></td>
+<td>road</td>
+<td>1 if the estimated reference length exceeds 0.1 km</td>
+</tr>
+<tr>
+<td><code>road_g1_ok</code>, <code>road_g1_tx</code></td>
+<td>road</td>
+<td><code>road_g1</code> within Eastern Oklahoma, within South-Central
+Texas</td>
+</tr>
+<tr>
+<td><code>bld_osm_share</code>, <code>bld_esri_share</code></td>
+<td>building</td>
+<td>share of Overture buildings from OpenStreetMap, from Esri</td>
+</tr>
+<tr>
+<td><code>bld_small_share</code></td>
+<td>building</td>
+<td>share of footprints under 40 m²</td>
+</tr>
+<tr>
+<td><code>bld_per_hu_log</code></td>
+<td>building</td>
+<td>log(1 + buildings per housing unit)</td>
+</tr>
+<tr>
+<td><code>fire0_rural</code></td>
+<td>facilities</td>
+<td>no <code>fire_department</code> place, times the rural share</td>
+</tr>
+<tr>
+<td><code>fire_evidence</code></td>
+<td>facilities</td>
+<td>no <code>fire_department</code> place, fire-station evidence
+elsewhere</td>
+</tr>
+<tr>
+<td><code>fire_classdesert</code></td>
+<td>facilities</td>
+<td>classification desert (Section 2)</td>
+</tr>
+<tr>
+<td><code>school0</code>, <code>school_evidence</code></td>
+<td>facilities</td>
+<td>no school place; no school place with school-named evidence</td>
+</tr>
+<tr>
+<td><code>cbp_lowplaces</code></td>
+<td>establishments</td>
+<td>shortfall of places per housing unit against the median</td>
+</tr>
+<tr>
+<td><code>region_eastern</code>, <code>region_maricopa</code>,
+<code>region_northern</code></td>
+<td>all</td>
+<td>region indicators</td>
+</tr>
+</tbody>
+</table>
+<p><em>Table 1. The 17 predictors with a leaderboard read.
+<code>src/lbreg_features.py</code> builds them.</em></p>
+<h2 id="why-the-first-estimator-failed">4. Why the first estimator
+failed</h2>
+<p>Before any leaderboard read, the first pipeline estimated every
+removed denominator from housing units, land area and road length, with
+quantile calibration by urban band, and averaged the defined component
+gaps. We submitted six of its files on 7 October, each testing one
+question (Table 2).</p>
+<table>
+<thead>
+<tr>
+<th>File (ID)</th>
+<th style="text-align: right;">Mean</th>
+<th style="text-align: right;">Public RMSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>constant 0.31080482 (6tP83ckS)</td>
+<td style="text-align: right;">0.311</td>
+<td style="text-align: right;">0.266318</td>
+</tr>
+<tr>
+<td>three-component composite (YCQGYJzr)</td>
+<td style="text-align: right;">0.311</td>
+<td style="text-align: right;">0.278726</td>
+</tr>
+<tr>
+<td>building component only (ctLe5wRK)</td>
+<td style="text-align: right;">0.232</td>
+<td style="text-align: right;">0.324419</td>
+</tr>
+<tr>
+<td>denominators raised 25% (Xng1Jyqn)</td>
+<td style="text-align: right;">0.407</td>
+<td style="text-align: right;">0.338412</td>
+</tr>
+<tr>
+<td>probabilistic road definition (UcmHP36M)</td>
+<td style="text-align: right;">0.313</td>
+<td style="text-align: right;">0.416334</td>
+</tr>
+</tbody>
+</table>
+<p><em>Table 2. First-pipeline reads. A sixth file without the unscored
+Eastern Washington rows was rejected.</em></p>
+<p>The composite lost to a constant at the same mean, and raising the
+denominators made it worse. The target moments (Section 5.1) explain
+why. The target averages 0.060 with standard deviation 0.089, so most
+tracts have almost no gap, and a model centred at 0.31 misses nearly
+every tract by more than any variation it captures. The constant 0.060
+alone would score 0.089. The package holds nothing that fixes this
+scale, so we took it from the leaderboard (Section 5).</p>
+<h2 id="calibration-from-public-leaderboard-moments">5. Calibration from
+public-leaderboard moments</h2>
+<h3 id="target-moments">5.1 Target moments</h3>
+<p>Write
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>P</mi><annotation encoding="application/x-tex">P</annotation></semantics></math>
+for the public split (about 30% of the 9,379 scored tracts). For a
+constant prediction
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mi mathvariant="normal">R</mi><mi mathvariant="normal">M</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">E</mi></mrow><mn>2</mn></msup><mo>=</mo><msub><mi>E</mi><mi>P</mi></msub><mo stretchy="false" form="prefix">[</mo><msup><mi>y</mi><mn>2</mn></msup><mo stretchy="false" form="postfix">]</mo><mo>−</mo><mn>2</mn><mi>k</mi><mspace width="0.167em"></mspace><mover><mi>y</mi><mo accent="true">‾</mo></mover><mo>+</mo><msup><mi>k</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\mathrm{RMSE}^2 = E_P[y^2] - 2k\,\bar y + k^2</annotation></semantics></math>.
+An all-zero file scored 0.107246 after the 2 October scorer change, as
+participant Kimyayd reported in thread 35079, which gives
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>E</mi><mi>P</mi></msub><mo stretchy="false" form="prefix">[</mo><msup><mi>y</mi><mn>2</mn></msup><mo stretchy="false" form="postfix">]</mo><mo>=</mo><mn>0.0115017</mn></mrow><annotation encoding="application/x-tex">E_P[y^2] = 0.0115017</annotation></semantics></math>.
+Our constant 0.31080482 scored 0.266318147. Together they give
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>y</mi><mo accent="true">‾</mo></mover><mo>=</mo><mn>0.059806</mn></mrow><annotation encoding="application/x-tex">\bar y = 0.059806</annotation></semantics></math>
+and a standard deviation of 0.089022. The same participant reported
+0.059806 for the all-zero file under the scorer before 2 October and
+read that metric as a mean absolute error. For a non-negative target and
+an all-zero file, the mean absolute error equals the mean, so the two
+values agree. The scripts carry
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>y</mi><mo accent="true">‾</mo></mover><mo>=</mo><mn>0.059802</mn></mrow><annotation encoding="application/x-tex">\bar y = 0.059802</annotation></semantics></math>,
+which we derived with the constant rounded to 0.3108. The 0.000004
+difference shifts every prediction by that amount and changes no
+reported RMSE.</p>
+<h3 id="probes">5.2 Probes</h3>
+<p>A probe for predictor
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+predicts
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>y</mi><mo accent="true">‾</mo></mover><mo>+</mo><mi>a</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>f</mi><mi>i</mi></msub><mo>−</mo><mi>m</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar y + a(f_i - m)</annotation></semantics></math>
+in the four scored regions, where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
+is the mean of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>f</mi><annotation encoding="application/x-tex">f</annotation></semantics></math>
+over the scored tracts, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>y</mi><mo accent="true">‾</mo></mover><annotation encoding="application/x-tex">\bar y</annotation></semantics></math>
+in Eastern Washington. The file format requires the Eastern Washington
+rows, but they are not scored. Expanding the squared error gives</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mrow><mi mathvariant="normal">R</mi><mi mathvariant="normal">M</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">E</mi></mrow><mn>2</mn></msup><mo>=</mo><msub><mrow><mi mathvariant="normal">V</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow><mi>P</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mn>2</mn><mi>a</mi><mspace width="0.167em"></mspace><msub><mrow><mi mathvariant="normal">C</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">v</mi></mrow><mi>P</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo>,</mo><mi>f</mi><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msup><mi>a</mi><mn>2</mn></msup><msub><mi>E</mi><mi>P</mi></msub><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">[</mo><mo stretchy="false" form="prefix">(</mo><mi>f</mi><mo>−</mo><mi>m</mi><msup><mo stretchy="false" form="postfix">)</mo><mn>2</mn></msup><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">\mathrm{RMSE}^2 = \mathrm{Var}_P(y) - 2a\,\mathrm{Cov}_P(y, f) + a^2 E_P\!\left[(f - m)^2\right],</annotation></semantics></math></p>
+<p>which we solve for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mrow><mi mathvariant="normal">C</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">v</mi></mrow><mi>P</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo>,</mo><mi>f</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Cov}_P(y, f)</annotation></semantics></math>.
+Since the scored-tract value of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">[</mo><mo stretchy="false" form="prefix">(</mo><mi>f</mi><mo>−</mo><mi>m</mi><msup><mo stretchy="false" form="postfix">)</mo><mn>2</mn></msup><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">E[(f - m)^2]</annotation></semantics></math>
+stands in for its public value, the read assumes that the public split
+is a random subset. We chose each
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
+so that predictions stay in [0, 1] and the RMSE moves by far more than
+the nine displayed decimals. <code>src/lbreg_probe.py</code> writes a
+probe file and converts a read into a covariance, a correlation and the
+best RMSE that predictor alone could reach.</p>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Predictor</th>
+<th style="text-align: right;">a</th>
+<th style="text-align: right;">Public RMSE</th>
+<th style="text-align: right;">Cov(y, f)</th>
+<th style="text-align: right;">Corr</th>
+<th style="text-align: right;">Best alone</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4Yru3kU9</td>
+<td><code>road_g1</code></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.088372</td>
+<td style="text-align: right;">+0.001222</td>
+<td style="text-align: right;">+0.285</td>
+<td style="text-align: right;">0.085345</td>
+</tr>
+<tr>
+<td>cF851kiC</td>
+<td><code>fire_evidence</code></td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">0.089489</td>
+<td style="text-align: right;">+0.002774</td>
+<td style="text-align: right;">+0.123</td>
+<td style="text-align: right;">0.088345</td>
+</tr>
+<tr>
+<td>pEvURwmn</td>
+<td><code>fire0_rural</code></td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">0.086352</td>
+<td style="text-align: right;">+0.005664</td>
+<td style="text-align: right;">+0.247</td>
+<td style="text-align: right;">0.086269</td>
+</tr>
+<tr>
+<td>4WMt2RbL</td>
+<td><code>region_eastern</code></td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.085751</td>
+<td style="text-align: right;">+0.008496</td>
+<td style="text-align: right;">+0.287</td>
+<td style="text-align: right;">0.085293</td>
+</tr>
+<tr>
+<td>MHgJAeDX</td>
+<td><code>region_maricopa</code></td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.092588</td>
+<td style="text-align: right;">-0.002946</td>
+<td style="text-align: right;">-0.088</td>
+<td style="text-align: right;">0.088679</td>
+</tr>
+<tr>
+<td>jCsD82GY</td>
+<td><code>region_northern</code></td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.089567</td>
+<td style="text-align: right;">+0.000508</td>
+<td style="text-align: right;">+0.023</td>
+<td style="text-align: right;">0.089000</td>
+</tr>
+<tr>
+<td>tyzLSRnx</td>
+<td><code>cbp_lowplaces</code></td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.090402</td>
+<td style="text-align: right;">-0.000703</td>
+<td style="text-align: right;">-0.030</td>
+<td style="text-align: right;">0.088986</td>
+</tr>
+<tr>
+<td>5W8b8P4f</td>
+<td><code>school0</code></td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.089951</td>
+<td style="text-align: right;">+0.002581</td>
+<td style="text-align: right;">+0.070</td>
+<td style="text-align: right;">0.088804</td>
+</tr>
+<tr>
+<td>iMHPKR4w</td>
+<td><code>road_g1_def</code></td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.086558</td>
+<td style="text-align: right;">+0.009668</td>
+<td style="text-align: right;">+0.235</td>
+<td style="text-align: right;">0.086531</td>
+</tr>
+<tr>
+<td>jiNeSpzk</td>
+<td><code>road_g1_ok</code></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.085544</td>
+<td style="text-align: right;">+0.000819</td>
+<td style="text-align: right;">+0.287</td>
+<td style="text-align: right;">0.085291</td>
+</tr>
+<tr>
+<td>gZtnGknB</td>
+<td><code>road_g1_tx</code></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.092420</td>
+<td style="text-align: right;">+0.000372</td>
+<td style="text-align: right;">+0.113</td>
+<td style="text-align: right;">0.088452</td>
+</tr>
+<tr>
+<td>LJn8pYVm</td>
+<td><code>bld_osm_share</code></td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">0.107297</td>
+<td style="text-align: right;">-0.010479</td>
+<td style="text-align: right;">-0.305</td>
+<td style="text-align: right;">0.084789</td>
+</tr>
+<tr>
+<td>N2eHmQEE</td>
+<td><code>fire_classdesert</code></td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">0.087474</td>
+<td style="text-align: right;">+0.003081</td>
+<td style="text-align: right;">+0.187</td>
+<td style="text-align: right;">0.087454</td>
+</tr>
+<tr>
+<td>ykjXfBWm</td>
+<td><code>bld_per_hu_log</code></td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.087883</td>
+<td style="text-align: right;">+0.007638</td>
+<td style="text-align: right;">+0.181</td>
+<td style="text-align: right;">0.087555</td>
+</tr>
+<tr>
+<td>y8wcxgqQ</td>
+<td><code>bld_esri_share</code></td>
+<td style="text-align: right;">0.17</td>
+<td style="text-align: right;">0.092582</td>
+<td style="text-align: right;">-0.000163</td>
+<td style="text-align: right;">-0.013</td>
+<td style="text-align: right;">0.089018</td>
+</tr>
+<tr>
+<td>KZf55RXS</td>
+<td><code>bld_small_share</code></td>
+<td style="text-align: right;">0.3</td>
+<td style="text-align: right;">0.090287</td>
+<td style="text-align: right;">+0.000564</td>
+<td style="text-align: right;">+0.080</td>
+<td style="text-align: right;">0.088740</td>
+</tr>
+<tr>
+<td>kBNDdBt4</td>
+<td><code>school_evidence</code></td>
+<td style="text-align: right;">0.1</td>
+<td style="text-align: right;">0.091912</td>
+<td style="text-align: right;">+0.000354</td>
+<td style="text-align: right;">+0.016</td>
+<td style="text-align: right;">0.089013</td>
+</tr>
+<tr>
+<td>yhmsidry</td>
+<td><code>fire0_any</code></td>
+<td style="text-align: right;">0.06</td>
+<td style="text-align: right;">0.094578</td>
+<td style="text-align: right;">-0.002284</td>
+<td style="text-align: right;">-0.056</td>
+<td style="text-align: right;">0.088883</td>
+</tr>
+<tr>
+<td>871Ypj56</td>
+<td><code>road_g0_def</code></td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.085097</td>
+<td style="text-align: right;">+0.012951</td>
+<td style="text-align: right;">+0.294</td>
+<td style="text-align: right;">0.085084</td>
+</tr>
+<tr>
+<td>JXywjudP</td>
+<td><code>fire0_logarea</code></td>
+<td style="text-align: right;">0.02</td>
+<td style="text-align: right;">0.088213</td>
+<td style="text-align: right;">+0.027013</td>
+<td style="text-align: right;">+0.198</td>
+<td style="text-align: right;">0.087257</td>
+</tr>
+<tr>
+<td>bNSxfWJe</td>
+<td><code>fire0_noroad</code></td>
+<td style="text-align: right;">0.06</td>
+<td style="text-align: right;">0.097896</td>
+<td style="text-align: right;">-0.008129</td>
+<td style="text-align: right;">-0.210</td>
+<td style="text-align: right;">0.087046</td>
+</tr>
+<tr>
+<td>USMyMrTA</td>
+<td><code>ems_evidence</code></td>
+<td style="text-align: right;">0.17</td>
+<td style="text-align: right;">0.091696</td>
+<td style="text-align: right;">+0.000751</td>
+<td style="text-align: right;">+0.053</td>
+<td style="text-align: right;">0.088901</td>
+</tr>
+<tr>
+<td>wRTfDyWv</td>
+<td><code>bld_google_share</code></td>
+<td style="text-align: right;">0.35</td>
+<td style="text-align: right;">0.092376</td>
+<td style="text-align: right;">+0.000218</td>
+<td style="text-align: right;">+0.031</td>
+<td style="text-align: right;">0.088982</td>
+</tr>
+<tr>
+<td>rcTdTnXi</td>
+<td><code>fire0_rural_noroad</code></td>
+<td style="text-align: right;">0.45</td>
+<td style="text-align: right;">0.093310</td>
+<td style="text-align: right;">-0.000092</td>
+<td style="text-align: right;">-0.018</td>
+<td style="text-align: right;">0.089011</td>
+</tr>
+<tr>
+<td>5McWTXq7</td>
+<td><code>road_lowclass_share</code></td>
+<td style="text-align: right;">0.9</td>
+<td style="text-align: right;">0.090515</td>
+<td style="text-align: right;">+0.000146</td>
+<td style="text-align: right;">+0.064</td>
+<td style="text-align: right;">0.088842</td>
+</tr>
+<tr>
+<td>pzB6kHpi</td>
+<td><code>road_g05_def</code></td>
+<td style="text-align: right;">0.058</td>
+<td style="text-align: right;">0.086645</td>
+<td style="text-align: right;">+0.009826</td>
+<td style="text-align: right;">+0.238</td>
+<td style="text-align: right;">0.086460</td>
+</tr>
+<tr>
+<td>V9xHm5JM</td>
+<td><code>road_county_low_share</code></td>
+<td style="text-align: right;">0.18</td>
+<td style="text-align: right;">0.085701</td>
+<td style="text-align: right;">+0.003630</td>
+<td style="text-align: right;">+0.272</td>
+<td style="text-align: right;">0.085658</td>
+</tr>
+</tbody>
+</table>
+<p><em>Table 3. Single-predictor probes, 11 to 17 October. The constant
+at the mean scores 0.089022. <code>probes/lbreg_probes.json</code> holds
+the a and RMSE columns that <code>src/lbreg_fit.py</code>
+reads.</em></p>
+<h3 id="joint-estimator">5.3 Joint estimator</h3>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>
+is the covariance matrix of the chosen predictors over all scored
+tracts, so it uses every tract rather than the public 30% only.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>c</mi><annotation encoding="application/x-tex">c</annotation></semantics></math>
+is the vector of probed covariances. Then
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>=</mo><msup><mi mathvariant="normal">Σ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mi>c</mi></mrow><annotation encoding="application/x-tex">\beta = \Sigma^{-1}c</annotation></semantics></math>,
+and before clipping the expected public RMSE is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><mrow><msub><mrow><mi mathvariant="normal">V</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi></mrow><mi>P</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msup><mi>c</mi><mi>⊤</mi></msup><msup><mi mathvariant="normal">Σ</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mi>c</mi></mrow></msqrt><annotation encoding="application/x-tex">\sqrt{\mathrm{Var}_P(y) - c^\top \Sigma^{-1} c}</annotation></semantics></math>.
+Predictions are clipped to [0, 1]: one tract falls below zero in the
+13-predictor model, 28 in the 17-predictor, 64 in the 21-predictor and
+82 in the 25-predictor model, and none exceeds one.</p>
+<table>
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 69%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Model</th>
+<th style="text-align: right;">Expected</th>
+<th style="text-align: right;">Public RMSE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8R4BSBA6</td>
+<td>5 predictors (<code>road_g1</code>, <code>fire_evidence</code>,
+<code>fire0_rural</code>, two regions)</td>
+<td style="text-align: right;">0.081292</td>
+<td style="text-align: right;">0.081498</td>
+</tr>
+<tr>
+<td>7xysJ25i</td>
+<td>9 predictors (adds <code>region_northern</code>,
+<code>cbp_lowplaces</code>, <code>school0</code>,
+<code>road_g1_def</code>)</td>
+<td style="text-align: right;">0.079606</td>
+<td style="text-align: right;">0.079857</td>
+</tr>
+<tr>
+<td>FNBceCuK</td>
+<td>13 predictors (adds <code>road_g1_ok</code>,
+<code>road_g1_tx</code>, <code>bld_osm_share</code>,
+<code>fire_classdesert</code>)</td>
+<td style="text-align: right;">0.078400</td>
+<td style="text-align: right;">0.078660</td>
+</tr>
+<tr>
+<td>knE1GJ3o</td>
+<td>17 predictors (adds <code>bld_per_hu_log</code>,
+<code>bld_esri_share</code>, <code>bld_small_share</code>,
+<code>school_evidence</code>)</td>
+<td style="text-align: right;">0.075837</td>
+<td style="text-align: right;">0.076163</td>
+</tr>
+<tr>
+<td>gki9K7jy</td>
+<td>21 predictors (adds <code>fire0_any</code>,
+<code>road_g0_def</code>, <code>fire0_logarea</code>,
+<code>fire0_noroad</code>)</td>
+<td style="text-align: right;">0.074989</td>
+<td style="text-align: right;">0.075383</td>
+</tr>
+<tr>
+<td>6BNL8pZ3</td>
+<td>25 predictors (adds <code>ems_evidence</code>,
+<code>bld_google_share</code>, <code>fire0_rural_noroad</code>,
+<code>road_lowclass_share</code>)</td>
+<td style="text-align: right;">0.074839</td>
+<td style="text-align: right;">0.075416</td>
+</tr>
+<tr>
+<td>1Vtrct6A</td>
+<td>27 predictors (adds <code>road_g05_def</code>,
+<code>road_county_low_share</code>)</td>
+<td style="text-align: right;">0.074725</td>
+<td style="text-align: right;">0.075466</td>
+</tr>
+</tbody>
+</table>
+<p><em>Table 4. Joint models. From knE1GJ3o on, every file applies the
+no-Overture rule of Section 6, and its expectation assumes one public
+water tract with target 1 among about 2,814 public tracts (without the
+rule the 17-, 21-, 25- and 27-predictor fits expect 0.077938, 0.077127,
+0.076980 and 0.076868). The first four reads land 0.0002 to 0.0003 above
+their predictions; the gap then grows to 0.0004, 0.0006 and 0.0007, and
+the 25- and 27-predictor files read worse than the 21-predictor one.
+gki9K7jy and 6BNL8pZ3 are the two files selected for private
+scoring.</em></p>
+<p>The coefficients of the 13-predictor file, FNBceCuK, are in
+<code>outputs/joint13.json</code>. The largest are on
+<code>road_g1</code> (+0.356), <code>road_g1_tx</code> (−0.222),
+<code>road_g1_ok</code> (+0.071), <code>fire_classdesert</code>
+(+0.056), <code>region_eastern</code> (+0.045) and
+<code>bld_osm_share</code> (−0.032). The road shortfall carries the most
+signal, with less weight in South-Central Texas and more in Eastern
+Oklahoma. A classification desert raises the prediction, as the facility
+definition implies: a station filed outside <code>fire_department</code>
+counts as missing. A high OpenStreetMap share lowers it, which suggests
+that where OpenStreetMap supplies the buildings, Overture holds at least
+as many as the Microsoft reference.</p>
+<p>The selected files keep this pattern. In gki9K7jy
+(<code>outputs/joint21.json</code>) the largest coefficients are on
+<code>road_g1</code> (+0.412), <code>road_g1_tx</code> (−0.294),
+<code>bld_esri_share</code> (−0.065), <code>fire_classdesert</code>
+(+0.054), <code>bld_small_share</code> (+0.051) and
+<code>region_eastern</code> (+0.049). 6BNL8pZ3
+(<code>outputs/joint25.json</code>) has the same leading terms, with
+<code>road_g1</code> at +0.388 and <code>road_g1_tx</code> at
+−0.280.</p>
+<h2 id="edge-cases">6. Edge cases</h2>
+<ul>
+<li><strong>GEOID as text.</strong> Every script reads GEOID as a
+string, and every submission keeps the sample files’ GEOIDs and row
+order, so Maricopa’s <code>04…</code> tracts keep their leading zero and
+every join succeeds.</li>
+<li><strong>Eastern Washington.</strong> The scorer rejects a file
+without its 415 rows, but they are not scored. They are set to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>y</mi><mo accent="true">‾</mo></mover><annotation encoding="application/x-tex">\bar y</annotation></semantics></math>
+and excluded from every mean, covariance and fit.</li>
+<li><strong>Tracts with no Overture data.</strong> Two scored tracts,
+48039990000 and 48057990000 (Texas water tracts), hold no Overture road,
+building or place. A tract in the authoritative sample has at least one
+defined component, and with a zero Overture numerator any defined
+component has a gap of 1, so their score is 1. FNBceCuK predicts 0.0527
+for both, because the linear model sees only all-zero features.
+<code>src/edge_no_overture.py</code> applies the rule from the 15
+October files on, including both selected files. The first, knE1GJ3o (17
+predictors), read 0.076163 on 15 October: one public tract with target 1
+gives 0.075837 plus the offset of Table 4 (none would give 0.077938,
+both 0.073677).</li>
+<li><strong>Zero-population and zero-housing tracts.</strong> The 26
+scored tracts with no population are exactly the tracts with no
+<code>pct_urban</code>. The code treats a missing urban share as fully
+urban, which sets <code>fire0_rural</code> to 0 rather than guessing a
+rural share. 80 tracts have no housing units and 101 have 50 or fewer.
+Every per-housing-unit quantity divides by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">max</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>H</mi><msub><mi>U</mi><mi>i</mi></msub><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\max(HU_i, 1)</annotation></semantics></math>,
+and <code>cbp_lowplaces</code> is set to 0 at 50 housing units or fewer,
+where a single shop moves places per housing unit a long way.</li>
+<li><strong>Undefined road component.</strong> 2,897 scored tracts
+(30.9%) have no estimated reference road: 64.3% in Maricopa, 31.3% in
+Northern California, 23.7% in Eastern Oklahoma and 23.4% in
+South-Central Texas. The organisers report that at least one component
+is undefined in 55%, 37%, 21% and 28% of tracts in the same regions.
+That is not the same quantity, but Maricopa stands far above the others
+in both. For such tracts <code>road_g1</code> is 0 and
+<code>road_g1_def</code> lets the fit move their level, which stands in
+for the varying divisor of the reference mean.</li>
+<li><strong>Data-sparse tracts.</strong> 70.7% of scored tracts have no
+<code>fire_department</code> place and 21.6% no school place. A zero
+count cannot tell a tract without a station from a tract whose station
+is missing, so the facility predictors weight zero counts by rurality
+(<code>fire0_rural</code>) or require evidence that a station exists
+under another category (<code>fire_evidence</code>,
+<code>fire_classdesert</code>, <code>school_evidence</code>).</li>
+</ul>
+<h2 id="alternative-weightings-and-why">7. Alternative weightings and
+why</h2>
+<ul>
+<li><strong>Equal weights on proxy components</strong> (Section 4) put
+the mean at 0.31 and lost to a constant. With the reference denominators
+gone, nothing in the package can set the scale of the components.</li>
+<li><strong>Single predictors</strong> (Table 3) reach at best 0.0848
+(<code>bld_osm_share</code>). The predictors carry partly separate
+information, so the 13-predictor model reaches 0.0787.</li>
+<li><strong>Region-specific road slopes.</strong> The road predictor
+restricted to Eastern Oklahoma correlates with the target at 0.287 and
+the one restricted to South-Central Texas at 0.113, in line with the
+organisers’ note that the TIGER-to-Overture length ratio differs by
+region (0.71 to 1.59).</li>
+<li><strong>No shrinkage; selection stopped at 25 predictors.</strong>
+The fits estimate 13 to 27 coefficients from covariances measured on
+about 2,800 public tracts. The optimism of an in-sample fit is of order
+p/n, under 1% of the variance here, so we did not shrink the
+coefficients. Table 4 shows the cost growing with p: the read sits
+0.0003 above prediction at 17 predictors and 0.0007 above it at 27, and
+the 25- and 27-predictor files read worse than the 21-predictor one. We
+selected the 21-predictor file, our best public read, and the
+25-predictor file, and stopped probing.</li>
+</ul>
+<h2 id="reproducing-the-submissions">8. Reproducing the submissions</h2>
+<p>The package (linked at the top) runs on Python 3.13 with pandas,
+NumPy and pyarrow. DuckDB’s command-line tool with its spatial extension
+is needed only to rebuild the classification-desert list, which is
+included. Nothing in the pipeline is random.</p>
+<ol type="1">
+<li>Copy the challenge package so that
+<code>data/reference/&lt;region&gt;/</code> and
+<code>data/strata/&lt;region&gt;/</code> sit next to <code>src/</code>,
+for example with
+<code>aws s3 sync s3://us-west-2.opendata.source.coop/humane-intelligence/bias-bounty-mapping-equity-challenge/reference/ data/reference/ --no-sign-request</code>
+and the same command for <code>strata/</code>.</li>
+<li>Put the five
+<code>data/features/&lt;region&gt;-features.parquet</code> files of
+<code>teddywasserman/overture-coverage-equity</code> at commit
+<code>1c9033ae2373c9c0adbf4f2315bbf6d5485d6fe0</code> in
+<code>third_party/overture-coverage-equity/data/features/</code>.
+<code>SHA256SUMS</code> lists their hashes.</li>
+<li>Optional: <code>python src/misfiled_stations.py</code> then
+<code>python src/misfiled_report.py</code> rebuild
+<code>analysis/misfiled/classification_deserts.csv</code>.</li>
+<li><code>python src/lbreg_features.py</code> writes
+<code>work/lbreg_features.parquet</code> in about two seconds.</li>
+<li><code>python src/lbreg_fit.py outputs/joint13.csv road_g1 fire_evidence fire0_rural region_eastern region_maricopa region_northern cbp_lowplaces school0 road_g1_def road_g1_ok road_g1_tx bld_osm_share fire_classdesert</code>
+rebuilds the file submitted as FNBceCuK, SHA-256
+<code>1969f09d1f715c173dde2456cc5ffaa9a2d7582e729704183e982cabc12aabaf</code>.
+The same command for <code>outputs/joint17.csv</code> with the 17
+predictors of <code>outputs/joint17.json</code>, then
+<code>python src/edge_no_overture.py outputs/joint17.csv outputs/joint17_w1.csv</code>,
+rebuilds knE1GJ3o.</li>
+<li>The two selected files are built the same way.
+<code>python src/lbreg_fit.py outputs/joint21.csv</code> followed by the
+21 predictors listed in <code>outputs/joint21.json</code>, then
+<code>python src/edge_no_overture.py outputs/joint21.csv outputs/joint21_w1.csv</code>,
+rebuilds gki9K7jy byte for byte, SHA-256
+<code>604eea81067bcebfc67df3b864fc3d7a7ec3692b4fc28de148861b1c8596ba66</code>.
+The same two commands with the 25 predictors of
+<code>outputs/joint25.json</code> give every value of 6BNL8pZ3. The
+uploaded file differs only in format: it has CRLF line endings and
+writes the two water tracts as <code>1</code> rather than
+<code>1.0</code> (uploaded SHA-256
+<code>254eabbde873bb79df9579614e0aa371e036b78ef5186be1ad64ffc9dbe2afbe</code>,
+rebuilt
+<code>4c22b3a285021fcf0894dd6cf3b1a7b10d80c0a8fd7c40fa4938f9494e0bf25a</code>).</li>
+<li>A new probe is written with
+<code>python src/lbreg_probe.py write &lt;predictor&gt; &lt;a&gt; &lt;file.csv&gt;</code>
+and read with
+<code>python src/lbreg_probe.py read &lt;predictor&gt; &lt;a&gt; &lt;public RMSE&gt;</code>.</li>
+</ol>
+<p>We ran steps 2, 4, 5 and 6 in a fresh folder on 2 November: the
+rebuilt FNBceCuK, knE1GJ3o and gki9K7jy files are byte-identical to the
+uploaded ones, and the rebuilt 6BNL8pZ3 file matches the uploaded values
+exactly.</p>
+<h2 id="limitations">9. Limitations</h2>
+<ul>
+<li>The coefficients rest on the public 30%. If the split is not random,
+or the private tracts relate to the predictors differently, the private
+score will be worse than the public one by more than the usual noise. On
+the private leaderboard shown on 1 November, while the top solutions
+were still under code review, gki9K7jy read 0.078014 and 6BNL8pZ3
+0.078044, both about 0.0026 above their public reads. That is more than
+the roughly 0.0004 the p/n optimism of 21 coefficients would explain,
+which points to differences between the public and private tracts or to
+more noise in the probed covariances than we assumed.</li>
+<li>Each covariance comes from one read rounded to nine decimals, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>E</mi><mi>P</mi></msub><mo stretchy="false" form="prefix">[</mo><mo stretchy="false" form="prefix">(</mo><mi>f</mi><mo>−</mo><mi>m</mi><msup><mo stretchy="false" form="postfix">)</mo><mn>2</mn></msup><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">E_P[(f - m)^2]</annotation></semantics></math>
+is replaced by its value over all scored tracts. Table 4 bounds the
+combined error at about 0.0003 in RMSE for the models we submitted.</li>
+<li>The predictors rank tracts; they do not estimate any removed
+reference count, and the model does not produce component scores.</li>
+<li>Most predictors come from another participant’s feature files. We
+verified the counts we use against our own build (Section 2), but any
+error common to both builds would pass that check.</li>
+<li>The method uses the public leaderboard as a measuring instrument:
+each read yields one covariance. We list every read so that a reader can
+judge that choice and reproduce the coefficients.</li>
+</ul>
+</body>
+</html>
